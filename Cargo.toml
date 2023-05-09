@@ -1,0 +1,16 @@
+[package]
+name = "wal-g-exporter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.1.8", features = ["derive", "env"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4.24" }
+log = { version = "0.4" }
+log4rs = { version = "1.2.0", features = ["json_encoder"] }
+prometheus = { version= "0.13.3" }
+tiny_http = { version = "0.12.0" }
