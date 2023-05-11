@@ -24,7 +24,13 @@ pub fn run() {
     let listen_addr = format!("0.0.0.0:{}", args.port);
     let server = Server::http(listen_addr).unwrap();
 
-    let exporters = available_exporters();
+    let exporters = available_exporters(
+        args.db_host,
+        args.db_port,
+        args.db_user,
+        args.db_password,
+        args.db_name,
+    );
 
     if let Some(ex) = exporters.get(&args.target) {
         let exp = Arc::clone(ex);

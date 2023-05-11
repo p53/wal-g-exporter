@@ -4,8 +4,10 @@ use crate::metric::Metrics;
 use crate::walg::BackupDetail;
 
 use log::{error, warn};
+use postgres::{Client, NoTls};
 use prometheus::proto::MetricFamily;
 use prometheus::Registry;
+use retry::{delay::Fixed, retry_with_index, OperationResult};
 use std::{
     process::{exit, Command},
     sync::{Arc, Mutex},
@@ -14,15 +16,51 @@ use std::{
 
 pub struct PostgresExporter {
     metrics: Arc<Mutex<Metrics>>,
+    client: Arc<Mutex<Client>>,
 }
 
 impl PostgresExporter {
-    pub fn new() -> PostgresExporter {
+    pub fn new(
+        host: String,
+        port: String,
+        user: String,
+        password: String,
+        db_name: String,
+    ) -> PostgresExporter {
         let r = Registry::new();
         let metrics = Metrics::new(r);
-        return PostgresExporter {
-            metrics: Arc::new(Mutex::new(metrics)),
-        };
+        let connect_string = format!(
+            "host={} port={} user={} password={} dbname={}",
+            host, port, user, password, db_name
+        );
+
+        let client = retry_with_index(Fixed::from_millis(2000), |current_try| {
+            if current_try > 10 {
+                return OperationResult::Err("did not succeed within 10 tries");
+            }
+
+            let client_local = Client::connect(&connect_string, NoTls);
+            match client_local {
+                Ok(c) => OperationResult::Ok(c),
+                Err(e) => {
+                    warn!("{}", e);
+                    OperationResult::Retry("retry")
+                }
+            }
+        });
+
+        match client {
+            Ok(c) => {
+                return PostgresExporter {
+                    metrics: Arc::new(Mutex::new(metrics)),
+                    client: Arc::new(Mutex::new(c)),
+                };
+            }
+            Err(e) => {
+                error!("{}", e);
+                exit(1)
+            }
+        }
     }
 }
 

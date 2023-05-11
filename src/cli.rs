@@ -5,8 +5,16 @@ use clap::Parser;
 pub struct Cli {
     #[arg(short, long)]
     pub target: String,
-    #[arg(short, long, env)]
+    #[arg(default_value = "localhost", long, env)]
+    pub db_host: String,
+    #[arg(default_value = "5432", long, env)]
+    pub db_port: String,
+    #[arg(long, env)]
+    pub db_user: String,
+    #[arg(long, env)]
     pub db_password: String,
+    #[arg(long, env)]
+    pub db_name: String,
     #[arg(long, env)]
     pub aws_region: String,
     #[arg(long, env)]
