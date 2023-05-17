@@ -14,5 +14,5 @@ log = { version = "0.4" }
 log4rs = { version = "1.2.0", features = ["json_encoder"] }
 prometheus = { version= "0.13.3" }
 tiny_http = { version = "0.12.0" }
-postgres = { version = "0.19.5" }
+postgres = { version = "0.19.5", features = ["with-chrono-0_4"] }
 retry = { version = "2.0.0" }

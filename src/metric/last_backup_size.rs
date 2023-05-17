@@ -4,7 +4,7 @@ use prometheus::{
 };
 
 use super::Metric;
-use crate::walg::BackupDetail;
+use crate::{exporter::postgres_exporter::ArchiverInfo, walg::BackupDetail};
 
 pub struct LastBackupSizeCompressed {
     gauge: GenericGauge<AtomicI64>,
@@ -27,7 +27,7 @@ impl LastBackupSizeCompressed {
 }
 
 impl Metric for LastBackupSizeCompressed {
-    fn calculate(&self, details: &Vec<BackupDetail>) {
+    fn calculate(&self, details: &Vec<BackupDetail>, _: &ArchiverInfo) {
         if let Some(detail) = details.last() {
             self.gauge.set(detail.compressed_size.into());
         }
@@ -47,7 +47,7 @@ impl LastBackupSizeUnCompressed {
 }
 
 impl Metric for LastBackupSizeUnCompressed {
-    fn calculate(&self, details: &Vec<BackupDetail>) {
+    fn calculate(&self, details: &Vec<BackupDetail>, _: &ArchiverInfo) {
         if let Some(detail) = details.last() {
             self.gauge.set(detail.uncompressed_size.into());
         }

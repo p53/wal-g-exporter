@@ -4,7 +4,7 @@ use prometheus::{
 };
 
 use super::Metric;
-use crate::walg::BackupDetail;
+use crate::{exporter::postgres_exporter::ArchiverInfo, walg::BackupDetail};
 
 pub struct BackupList {
     gauge: GenericGaugeVec<AtomicI64>,
@@ -21,7 +21,7 @@ impl BackupList {
 }
 
 impl Metric for BackupList {
-    fn calculate(&self, details: &Vec<BackupDetail>) {
+    fn calculate(&self, details: &Vec<BackupDetail>, _: &ArchiverInfo) {
         for detail in details {
             self.gauge
                 .with_label_values(&[&detail.wal_file_name, &detail.start_lsn.to_string()])

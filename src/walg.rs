@@ -31,7 +31,8 @@ pub struct BackupDetail {
 pub mod rfc3339_nano_format {
     use chrono::{DateTime, TimeZone, Utc};
     use serde::{self, Deserialize, Deserializer};
-    const FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%fZ";
+
+    pub const RFC3339_NANO_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S.%fZ";
 
     // The signature of a deserialize_with function must follow the pattern:
     //
@@ -45,7 +46,7 @@ pub mod rfc3339_nano_format {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Utc.datetime_from_str(&s, FORMAT)
+        Utc.datetime_from_str(&s, RFC3339_NANO_FORMAT)
             .map_err(serde::de::Error::custom)
     }
 }

@@ -4,7 +4,7 @@ use prometheus::{
 };
 
 use super::Metric;
-use crate::walg::BackupDetail;
+use crate::{exporter::postgres_exporter::ArchiverInfo, walg::BackupDetail};
 
 pub struct LastBackupDuration {
     gauge: GenericGauge<AtomicI64>,
@@ -20,7 +20,7 @@ impl LastBackupDuration {
 }
 
 impl Metric for LastBackupDuration {
-    fn calculate(&self, details: &Vec<BackupDetail>) {
+    fn calculate(&self, details: &Vec<BackupDetail>, _: &ArchiverInfo) {
         if let Some(detail) = details.last() {
             self.gauge
                 .set(detail.finish_time.timestamp() - detail.start_time.timestamp());
