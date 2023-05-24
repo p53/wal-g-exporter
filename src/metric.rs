@@ -4,6 +4,7 @@ use crate::exporter::postgres_exporter::ArchiverInfo;
 use crate::walg::BackupDetail;
 use backup_count::BackupCount;
 use backup_list::BackupList;
+use incremental_count::IncrementalBackupCount;
 use last_archived_time::LastArchivedTime;
 use last_backup::LastBackup;
 use last_backup_duration::LastBackupDuration;
@@ -15,6 +16,7 @@ use prometheus::Registry;
 
 pub mod backup_count;
 pub mod backup_list;
+pub mod incremental_count;
 pub mod last_archived_time;
 pub mod last_backup;
 pub mod last_backup_duration;
@@ -42,6 +44,7 @@ impl Metrics {
                 Arc::new(LastBackupSizeUnCompressed::new(&r)),
                 Arc::new(BackupList::new(&r)),
                 Arc::new(LastArchivedTime::new(&r)),
+                Arc::new(IncrementalBackupCount::new(&r)),
             ],
             registry: r,
         };
