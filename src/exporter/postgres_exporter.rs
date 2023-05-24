@@ -24,6 +24,8 @@ const STAT_ARCHIVER_QUERY: &str = concat!(
     "COALESCE(last_failed_time, to_timestamp(0)) FROM pg_stat_archiver",
 );
 
+const IS_NOT_IN_RECOVERY_QUERY: &str = "SELECT NOT pg_is_in_recovery()";
+
 pub struct ArchiverInfo {
     pub last_archived_wal: Box<String>,
     pub last_archived_time: DateTime<Utc>,
@@ -86,59 +88,79 @@ impl PostgresExporter {
             }
         }
     }
-}
 
-impl Exporter for PostgresExporter {
-    fn collect(&self) -> Vec<MetricFamily> {
-        let output = Command::new("wal-g-pg")
-            .arg("backup-list")
-            .arg("--json")
-            .arg("--detail")
-            .output()
-            .expect("process failed to execute");
-
-        if !output.status.success() {
-            error!("{}", std::str::from_utf8(&output.stderr).unwrap());
-            exit(1)
-        }
-
-        let mut archiver_info = ArchiverInfo::new();
-
+    fn is_master(&self) -> bool {
         for row in self
             .client
             .lock()
             .unwrap()
-            .query(STAT_ARCHIVER_QUERY, &[])
+            .query(IS_NOT_IN_RECOVERY_QUERY, &[])
             .unwrap_or_else(|e| {
                 error!("{}", e);
                 exit(1);
             })
         {
-            archiver_info.last_archived_time = row.get(3);
-            let a_wal: String = row.get(2);
-            archiver_info.last_archived_wal = Box::new(a_wal);
+            return row.get(0);
         }
+        return false;
+    }
+}
 
-        if output.stdout.len() != 0 {
-            let deserialized: Vec<BackupDetail> = serde_json::from_str(
-                std::str::from_utf8(&output.stdout).unwrap(),
-            )
-            .unwrap_or_else(|e| {
-                error!("{}", e);
+impl Exporter for PostgresExporter {
+    fn collect(&self) -> Vec<MetricFamily> {
+        if self.is_master() {
+            let output = Command::new("wal-g-pg")
+                .arg("backup-list")
+                .arg("--json")
+                .arg("--detail")
+                .output()
+                .expect("process failed to execute");
+
+            if !output.status.success() {
+                error!("{}", std::str::from_utf8(&output.stderr).unwrap());
                 exit(1)
-            });
+            }
 
-            self.metrics
+            let mut archiver_info = ArchiverInfo::new();
+
+            for row in self
+                .client
                 .lock()
                 .unwrap()
-                .gather(deserialized, archiver_info)
+                .query(STAT_ARCHIVER_QUERY, &[])
+                .unwrap_or_else(|e| {
+                    error!("{}", e);
+                    exit(1);
+                })
+            {
+                archiver_info.last_archived_time = row.get(3);
+                let a_wal: String = row.get(2);
+                archiver_info.last_archived_wal = Box::new(a_wal);
+            }
+
+            if output.stdout.len() != 0 {
+                let deserialized: Vec<BackupDetail> =
+                    serde_json::from_str(std::str::from_utf8(&output.stdout).unwrap())
+                        .unwrap_or_else(|e| {
+                            error!("{}", e);
+                            exit(1)
+                        });
+
+                self.metrics
+                    .lock()
+                    .unwrap()
+                    .gather(deserialized, archiver_info)
+            } else {
+                warn!("{}", std::str::from_utf8(&output.stderr).unwrap());
+                let result: Vec<MetricFamily> = vec![];
+                return result;
+            }
         } else {
-            warn!("{}", std::str::from_utf8(&output.stderr).unwrap());
+            warn!("{}", "node not master, not collecting metrics");
             let result: Vec<MetricFamily> = vec![];
             return result;
         }
 
-        // connect to db to list pg archives
         // look on fs for .ready files
     }
 }
