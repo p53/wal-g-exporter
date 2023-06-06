@@ -5,7 +5,9 @@ use prometheus::{
 };
 
 use super::Metric;
-use crate::{exporter::postgres_exporter::ArchiverInfo, walg::BackupDetail};
+use crate::{
+    metrics::postgres_metrics::PostgresMetricsData,
+};
 
 const WAL_FACTOR: i64 = 256;
 
@@ -41,17 +43,17 @@ impl IncrementalBackupCount {
     }
 }
 
-impl Metric for IncrementalBackupCount {
-    fn calculate(&self, details: &Vec<BackupDetail>, archiver_info: &ArchiverInfo) {
-        if archiver_info.last_archived_time == DateTime::<Utc>::MIN_UTC {
+impl Metric<PostgresMetricsData> for IncrementalBackupCount {
+    fn calculate(&self, info: &PostgresMetricsData) {
+        if info.archiver_info.last_archived_time == DateTime::<Utc>::MIN_UTC {
             self.gauge.set(0);
         }
-        if details.len() == 0 {
+        if info.details.len() == 0 {
             self.gauge.set(0);
         }
         self.gauge.set(self.wall_diff(
-            &archiver_info.last_archived_wal,
-            &details.last().unwrap().wal_file_name,
+            &info.archiver_info.last_archived_wal,
+            &info.details.last().unwrap().wal_file_name,
         ));
     }
 }

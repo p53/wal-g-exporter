@@ -4,7 +4,9 @@ use prometheus::{
 };
 
 use super::Metric;
-use crate::{exporter::postgres_exporter::ArchiverInfo, walg::BackupDetail};
+use crate::{
+    metrics::postgres_metrics::PostgresMetricsData,
+};
 
 pub struct LastArchivedTime {
     gauge: GenericGauge<AtomicI64>,
@@ -22,8 +24,9 @@ impl LastArchivedTime {
     }
 }
 
-impl Metric for LastArchivedTime {
-    fn calculate(&self, _: &Vec<BackupDetail>, archiver_info: &ArchiverInfo) {
-        self.gauge.set(archiver_info.last_archived_time.timestamp());
+impl Metric<PostgresMetricsData> for LastArchivedTime {
+    fn calculate(&self, data: &PostgresMetricsData) {
+        self.gauge
+            .set(data.archiver_info.last_archived_time.timestamp());
     }
 }

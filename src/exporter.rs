@@ -1,5 +1,5 @@
 use postgres_exporter::PostgresExporter;
-use prometheus::proto::MetricFamily;
+use prometheus::{proto::MetricFamily};
 use std::{collections::HashMap, sync::Arc};
 
 pub mod postgres_exporter;

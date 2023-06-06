@@ -13,6 +13,7 @@ use tiny_http::{Response, Server};
 pub mod cli;
 pub mod exporter;
 pub mod metric;
+pub mod metrics;
 pub mod walg;
 
 pub fn run() {

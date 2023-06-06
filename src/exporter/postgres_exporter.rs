@@ -1,9 +1,10 @@
 use super::Exporter;
 
+use crate::metrics::postgres_metrics::PostgresMetricsData;
+use crate::metrics::{postgres_metrics::PostgresMetrics, Metrics};
 use crate::walg::BackupDetail;
-use crate::{metric::Metrics, walg::rfc3339_nano_format::RFC3339_NANO_FORMAT};
 
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use log::{error, warn};
 use postgres::{Client, NoTls};
 use prometheus::proto::MetricFamily;
@@ -41,20 +42,24 @@ impl ArchiverInfo {
     }
 }
 pub struct PostgresExporter {
-    metrics: Arc<Mutex<Metrics>>,
+    metrics: Arc<Mutex<Metrics<Vec<BackupDetail>>>>,
+    pg_metrics: Arc<Mutex<PostgresMetrics<PostgresMetricsData>>>,
     client: Arc<Mutex<Client>>,
 }
 
-impl PostgresExporter {
+impl<'a> PostgresExporter {
     pub fn new(
         host: String,
         port: String,
         user: String,
         password: String,
         db_name: String,
-    ) -> PostgresExporter {
-        let r = Registry::new();
-        let metrics = Metrics::new(r);
+    ) -> Self {
+        let general_registry = Registry::new();
+        let pg_registry = Registry::new();
+        let metrics = Metrics::new(general_registry);
+        let pg_metrics = PostgresMetrics::new(pg_registry);
+
         let connect_string = format!(
             "host={} port={} user={} password={} dbname={}",
             host, port, user, password, db_name
@@ -77,8 +82,9 @@ impl PostgresExporter {
 
         match client {
             Ok(c) => {
-                return PostgresExporter {
+                return Self {
                     metrics: Arc::new(Mutex::new(metrics)),
+                    pg_metrics: Arc::new(Mutex::new(pg_metrics)),
                     client: Arc::new(Mutex::new(c)),
                 };
             }
@@ -106,7 +112,7 @@ impl PostgresExporter {
     }
 }
 
-impl Exporter for PostgresExporter {
+impl<'a> Exporter for PostgresExporter {
     fn collect(&self) -> Vec<MetricFamily> {
         if self.is_master() {
             let output = Command::new("wal-g-pg")
@@ -146,10 +152,20 @@ impl Exporter for PostgresExporter {
                             exit(1)
                         });
 
-                self.metrics
-                    .lock()
-                    .unwrap()
-                    .gather(deserialized, archiver_info)
+                let general_data = self.metrics.lock().unwrap().gather(&deserialized);
+
+                let data = PostgresMetricsData {
+                    details: deserialized,
+                    archiver_info,
+                };
+
+                let pg_data = self.pg_metrics.lock().unwrap().gather(&data);
+
+                general_data
+                    .iter()
+                    .cloned()
+                    .chain(pg_data.iter().cloned())
+                    .collect::<Vec<_>>()
             } else {
                 warn!("{}", std::str::from_utf8(&output.stderr).unwrap());
                 let result: Vec<MetricFamily> = vec![];
