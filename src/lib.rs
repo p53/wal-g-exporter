@@ -17,7 +17,6 @@ pub mod metrics;
 pub mod walg;
 
 pub fn run() {
-    info!("Starting application");
     let args = Cli::parse();
     let mut result_metrics: Vec<MetricFamily> = vec![];
     let (tx, rx) = mpsc::channel();
