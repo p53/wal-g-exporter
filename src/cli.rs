@@ -3,7 +3,7 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(author = "Ipoth P. <pavol.ipoth@protonmail.com>")]
-#[command(version = "1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Exports wal-g data in prometheus format", long_about = None)]
 #[command(name = "wal-g-exporter")]
 pub struct Cli {
