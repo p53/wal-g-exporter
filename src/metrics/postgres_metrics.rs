@@ -1,6 +1,8 @@
+use std::path::PathBuf;
 use std::{sync::Arc, vec};
 
 use crate::exporter::postgres_exporter::ArchiverInfo;
+use crate::metric::failed_archiving_count::FailedArchivingCount;
 use crate::metric::incremental_count::IncrementalBackupCount;
 use crate::metric::last_archived_time::LastArchivedTime;
 use crate::metric::Metric;
@@ -11,6 +13,7 @@ use prometheus::Registry;
 pub struct PostgresMetricsData {
     pub details: Vec<BackupDetail>,
     pub archiver_info: ArchiverInfo,
+    pub paths: Vec<PathBuf>,
 }
 
 pub struct PostgresMetrics<PostgresMetricsData> {
@@ -24,6 +27,7 @@ impl<'a> PostgresMetrics<PostgresMetricsData> {
             list: vec![
                 Arc::new(LastArchivedTime::new(&r)),
                 Arc::new(IncrementalBackupCount::new(&r)),
+                Arc::new(FailedArchivingCount::new(&r)),
             ],
             registry: r,
         };

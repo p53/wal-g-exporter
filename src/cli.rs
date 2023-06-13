@@ -1,10 +1,14 @@
+use crate::exporter::Target;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[command(name = "demo")]
+#[command(author = "Ipoth P. <pavol.ipoth@protonmail.com>")]
+#[command(version = "1.0")]
+#[command(about = "Exports wal-g data in prometheus format", long_about = None)]
+#[command(name = "wal-g-exporter")]
 pub struct Cli {
-    #[arg(short, long)]
-    pub target: String,
+    #[arg(short, long, value_enum)]
+    pub target: Target,
     #[arg(default_value = "localhost", long, env)]
     pub db_host: String,
     #[arg(default_value = "5432", long, env)]
@@ -15,6 +19,8 @@ pub struct Cli {
     pub db_password: String,
     #[arg(long, env)]
     pub db_name: String,
+    #[arg(long, env)]
+    pub db_data_dir: String,
     #[arg(long, env)]
     pub aws_region: String,
     #[arg(long, env)]

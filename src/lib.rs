@@ -31,6 +31,7 @@ pub fn run() {
         args.db_user,
         args.db_password,
         args.db_name,
+        args.db_data_dir,
     );
 
     if let Some(ex) = exporters.get(&args.target) {

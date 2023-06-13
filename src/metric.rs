@@ -1,5 +1,6 @@
 pub mod backup_count;
 pub mod backup_list;
+pub mod failed_archiving_count;
 pub mod incremental_count;
 pub mod last_archived_time;
 pub mod last_backup;

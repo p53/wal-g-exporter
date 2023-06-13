@@ -10,6 +10,8 @@ use postgres::{Client, NoTls};
 use prometheus::proto::MetricFamily;
 use prometheus::Registry;
 use retry::{delay::Fixed, retry_with_index, OperationResult};
+use std::fs;
+use std::path::PathBuf;
 use std::{
     process::{exit, Command},
     sync::{Arc, Mutex},
@@ -45,6 +47,7 @@ pub struct PostgresExporter {
     metrics: Arc<Mutex<Metrics<Vec<BackupDetail>>>>,
     pg_metrics: Arc<Mutex<PostgresMetrics<PostgresMetricsData>>>,
     client: Arc<Mutex<Client>>,
+    db_data_dir: Arc<Mutex<String>>,
 }
 
 impl<'a> PostgresExporter {
@@ -54,6 +57,7 @@ impl<'a> PostgresExporter {
         user: String,
         password: String,
         db_name: String,
+        db_data_dir: String,
     ) -> Self {
         let general_registry = Registry::new();
         let pg_registry = Registry::new();
@@ -86,6 +90,7 @@ impl<'a> PostgresExporter {
                     metrics: Arc::new(Mutex::new(metrics)),
                     pg_metrics: Arc::new(Mutex::new(pg_metrics)),
                     client: Arc::new(Mutex::new(c)),
+                    db_data_dir: Arc::new(Mutex::new(db_data_dir)),
                 };
             }
             Err(e) => {
@@ -127,6 +132,18 @@ impl<'a> Exporter for PostgresExporter {
                 exit(1)
             }
 
+            let data_dir_path = self.db_data_dir.lock().unwrap();
+            let dir_iterator =
+                fs::read_dir::<String>(data_dir_path.to_string()).unwrap_or_else(|e| {
+                    error!("{}", e);
+                    exit(1);
+                });
+            let mut paths: Vec<PathBuf> = vec![];
+
+            for entry in dir_iterator {
+                paths.push(entry.unwrap().path());
+            }
+
             let mut archiver_info = ArchiverInfo::new();
 
             for row in self
@@ -157,6 +174,7 @@ impl<'a> Exporter for PostgresExporter {
                 let data = PostgresMetricsData {
                     details: deserialized,
                     archiver_info,
+                    paths,
                 };
 
                 let pg_data = self.pg_metrics.lock().unwrap().gather(&data);
