@@ -23,6 +23,36 @@ jobs:
         shell: bash
         run: |
           cargo build --release --locked
+          pwd
+          ls -al
+          ls -al target
+          ls -al target/release
+
+      - name: Build archive
+        shell: bash
+        run: |
+          staging="${{matrix.asset_name}}-src"
+          mkdir -p "$staging"
+
+          cp {README.md,LICENSE} "$staging/"
+          cp {Cargo.toml,Cargo.lock} "$staging/"
+          cp -R ./src "./$staging/src"
+
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            7z a "${staging}.zip" "$staging"
+            echo "ASSET=${staging}.zip" >> $GITHUB_ENV
+          else
+            tar czf "${staging}.tar.gz" "${staging}"
+            echo "ASSET=${staging}.tar.gz" >> $GITHUB_ENV
+          fi
+
+      - name: Upload src to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.ASSET }}
+          asset_name: ${{ env.ASSET }}
+          tag: ${{ github.ref }}
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
