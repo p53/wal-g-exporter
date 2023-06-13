@@ -22,11 +22,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          cargo build --release --locked
-          pwd
-          ls -al
-          ls -al target
-          ls -al target/release
+          cargo build --release --locked --target=x86_64-unknown-linux-musl
 
       - name: Build archive
         shell: bash
