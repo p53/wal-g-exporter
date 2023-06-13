@@ -2,6 +2,8 @@
 
 Prometheus exporter for exporting wal-g backup tool data about backups and additional data related to backup process.
 
+Requirements: wal-g utility for respective db, for postgres, name must be wal-g-pg
+
 ```bash
 wal-g-exporter --help
 {"time":"2023-06-13T12:54:24.667420148+02:00","message":"Starting application","module_path":"wal_g_exporter","file":"src/lib.rs","line":20,"level":"INFO","target":"wal_g_exporter","thread":"main","thread_id":140640611135168,"mdc":{}}
