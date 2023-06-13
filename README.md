@@ -44,5 +44,18 @@ export AWS_SECRET_ACCESS_KEY="2Mv7KxUvircNYmZ9fobCnuaRkfxWFybL"
 export WALG_S3_PREFIX="s3://bucket-name/path/to/your/wal-g/backups"
 export AWS_REGION="us-east-2"
 export AWS_S3_FORCE_PATH_STYLE="true"
+export DB_DATA_DIR="/var/lib"
 EOF
+```
+
+Now you can run:
+
+```bash
+wal-g-exporter --target=postgres
+```
+
+Fetch prometheus metrics:
+
+```bash
+curl http://localhost:8080
 ```
