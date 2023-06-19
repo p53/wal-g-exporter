@@ -61,3 +61,9 @@ Fetch prometheus metrics:
 ```bash
 curl http://localhost:8080
 ```
+
+You can run container, using our image:
+
+```
+docker pull quay.io/p53/wal-g-exporter:<tag>
+```
